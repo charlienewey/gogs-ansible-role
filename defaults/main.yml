@@ -1,0 +1,50 @@
+---
+
+gogs_domain: git.yourdomain.com
+
+# set up the repo
+gogs_repo: github.com/gogits/gogs
+
+# password will be "administrator"
+gogs_login_user: yourlogin
+gogs_login_email: yourname.yourdomain.com
+
+# this is the system user that gogs will use
+gogs_user_name: git
+gogs_user_home: "/var/www/git"
+gogs_user_shell: /bin/bash
+gogs_user_go_path: "{{gogs_user_home}}/go"
+
+# configuration for the gogs server process
+gogs_server_names:
+  - "{{gogs_domain}}"
+gogs_server_url: "https://{{gogs_domain}}"
+gogs_server_host: "{{gogs_domain}}"
+gogs_server_port: 3000
+
+# database configuration options
+gogs_secret_key: CHANGE_THIS_VALUE_PLEASE
+gogs_database_type: mysql
+gogs_database_host: 127.0.0.1
+gogs_database_port: 3306
+gogs_database_user: gogs
+gogs_database_password: CHANGE_THIS_VALUE_TOO_PLEASE
+gogs_database_name: gogs
+
+# some basic preferences
+gogs_prefs_disable_registration: "true"
+gogs_prefs_enable_notify_mail: "true"
+gogs_prefs_landing_page: "explore"
+
+# mail options
+gogs_mailer_enabled: "true"
+gogs_mailer_host: smtp.mailgun.org
+gogs_mailer_port: 587
+# smtp authentication
+gogs_mailer_user: SMTP_AUTH_USERNAME
+gogs_mailer_passwd: SMTP_AUTH_PASSWORD
+gogs_mailer_from: "git@{{gogs_domain}}"
+
+gogs_log_mode: file
+gogs_log_level: Info
+gogs_log_path: /var/log/gogs

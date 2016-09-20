@@ -1,0 +1,24 @@
+---
+
+- name: ensure mysql is running
+  service: name=mysql state=running
+
+- include_vars: roles/mysql/vars/main.yml
+
+- name: create mysql database for gogs
+  mysql_db:
+    name: "{{gogs.database.name}}"
+    login_user: "{{mysql.root.user}}"
+    login_password: "{{mysql.root.password}}"
+    state: present
+    encoding: utf8
+
+- name: add mysql user for gogs
+  mysql_user:
+    state: present
+    name: "{{gogs.database.user}}"
+    password: "{{gogs.database.password}}"
+    login_user: "{{mysql.root.user}}"
+    login_password: "{{mysql.root.password}}"
+    priv: "{{gogs.database.name}}.*:ALL"
+    append_privs: yes

@@ -1,0 +1,51 @@
+RUN_USER={{gogs_user_name}}
+APP_NAME = Gogs: Go Git Service
+RUN_MODE = prod
+
+[repository]
+ROOT={{gogs_user_home}}/gogs-repositories
+
+[database]
+DB_TYPE={{gogs_database_type}}
+HOST={{gogs_database_host}}:{{gogs_database_port}}
+NAME={{gogs_database_name}}
+USER={{gogs_database_user}}
+PASSWD={{gogs_database_password}}
+
+[mailer]
+ENABLED={{gogs_mailer_enabled}}
+HOST={{gogs_mailer_host}}:{{gogs_mailer_port}}
+FROM={{gogs_mailer_from}}
+USER={{gogs_mailer_user}}
+PASSWD={{gogs_mailer_passwd}}
+
+[security]
+SECRET_KEY={{gogs_secret_key}}
+INSTALL_LOCK = true
+
+[service]
+DISABLE_REGISTRATION={{gogs_prefs_disable_registration}}
+ENABLE_NOTIFY_MAIL={{gogs_prefs_enable_notify_mail}}
+REGISTER_EMAIL_CONFIRM = true
+ENABLE_CAPTCHA         = true
+REQUIRE_SIGNIN_VIEW    = false
+
+[server]
+LANDING_PAGE={{gogs_prefs_landing_page}}
+DOMAIN       = {{gogs_server_host}}
+HTTP_PORT    = {{gogs_server_port}}
+ROOT_URL     = {{gogs_server_url}}
+DISABLE_SSH  = false
+SSH_PORT     = 22
+OFFLINE_MODE = false
+
+[picture]
+DISABLE_GRAVATAR = false
+
+[session]
+PROVIDER = file
+
+[log]
+MODE      = {{gogs_log_mode}}
+LEVEL     = {{gogs_log_level}}
+ROOT_PATH = {{gogs_log_path}}

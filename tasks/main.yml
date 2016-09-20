@@ -1,0 +1,113 @@
+---
+
+- name: install dependencies (go, git, etc)
+  apt: name={{item}} state=latest update_cache=yes cache_valid_time={{apt_cache_valid_time}}
+  with_items:
+    - mysql
+    - nginx
+    - golang-go
+    - git
+
+- name: check if mysql database exists and if users exist
+  shell: "mysqlshow --count {{gogs.database.name | quote}} user | grep 'Rows:' | sed 's/.*Rows: //'"
+  args:
+    executable: "/bin/bash"
+  register: gogs_users
+  changed_when: False
+
+- name: set up mysql database
+  include: roles/gogs/tasks/database.yml
+  when: "'Unknown database' in gogs_users.stderr"
+
+- name: create gogs user
+  user:
+    name: "{{gogs.user.name}}"
+    home: "{{gogs.user.home}}"
+    shell: "{{gogs.user.shell}}"
+
+- name: create go directory
+  file:
+    owner: "{{gogs.user.name}}"
+    group: "{{gogs.user.name}}"
+    path: "{{gogs.user.go.path}}"
+    state: directory
+
+- name: add go environment variables to .bashrc
+  blockinfile:
+    create: yes
+    owner: "{{gogs.user.name}}"
+    dest: "{{gogs.user.home}}/.bashrc"
+    block: |
+      export GOROOT=/usr/lib/go
+      export GOPATH={{gogs.user.go.path}}
+      export PATH=$PATH:$GOROOT/bin:$GOPATH/bin
+  become: yes
+  become_user: "{{gogs.user.name}}"
+
+- name: fetch latest gogs source
+  shell: "GOPATH={{gogs.user.go.path}} go get -u {{gogs.repo}}"
+  args:
+    chdir: "{{gogs.user.home}}"
+    executable: "{{gogs.user.shell}}"
+  become: yes
+  become_user: "{{gogs.user.name}}"
+  changed_when: False
+
+- name: check if gogs source has changed
+  shell: "find . -type f -newermt '{{ansible_date_time.iso8601}}' | grep -Pv '(FETCH|ORIG)_HEAD' | wc -l"
+  args:
+    chdir: "{{gogs.user.go.path}}"
+  changed_when: gogs_source.stdout < 1
+  register: gogs_source
+
+- name: build gogs from source
+  shell: "GOPATH={{gogs.user.go.path}} go build"
+  args:
+    chdir: "{{gogs.user.go.path}}/src/github.com/gogits/gogs"
+  become: yes
+  become_user: "{{gogs.user.name}}"
+  when: gogs_source.changed
+  notify:
+    - restart gogs
+
+- name: create gogs configuration directory
+  file:
+    owner: "{{gogs.user.name}}"
+    group: "{{gogs.user.name}}"
+    path: "{{gogs.user.go.path}}/src/github.com/gogits/gogs/custom/conf"
+    state: directory
+
+- name: template out preferences file
+  template:
+    src: app.ini.j2
+    dest: "{{gogs.user.go.path}}/src/github.com/gogits/gogs/custom/conf/app.ini"
+  notify:
+    - restart gogs
+
+- name: template out systemd service file
+  template:
+    src: gogs.service.j2
+    dest: /lib/systemd/system/gogs.service
+
+- name: create log directory
+  file:
+    owner: "{{gogs.user.name}}"
+    group: "{{gogs.user.name}}"
+    path: "{{gogs.log.path}}"
+    state: directory
+
+- name: enable and start gogs service
+  service: name=gogs enabled=yes state=started
+
+- name: template nginx config file
+  template:
+    src: gogs.nginx.conf
+    dest: /etc/nginx/conf.d/gogs
+  notify:
+    - restart nginx
+
+- name: create gogs user in database
+  include: roles/gogs/tasks/create_user.yml
+  when: gogs_users.stdout.startswith("0")  # add first user if there aren't any
+  notify:
+    - restart gogs

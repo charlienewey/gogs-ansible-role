@@ -1,0 +1,11 @@
+---
+
+- name: template out sql file to create new user
+  template: src=gogs-user.sql.j2 dest=/tmp/gogs-user.sql
+
+- name: "create initial user for gogs (password: administrator)"
+  shell: "mysql -u {{gogs.database.user | quote}} --password={{gogs.database.password | quote}} {{gogs.database.name | quote}} < /tmp/gogs-user.sql"
+  changed_when: False
+
+- name: remove temporary sql file
+  file: path=/tmp/gogs-user.sql
